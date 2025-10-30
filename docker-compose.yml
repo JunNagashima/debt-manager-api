@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # アプリケーション
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    container_name: debt-manager-api-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # ソースコードをマウント（ホットリロード用）
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/debt-manager_dev
+      - PORT=3000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - debt-manager-network
+
+  # PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: debt-manager-postgres-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: debt-manager_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - debt-manager-network
+
+networks:
+  debt-manager-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

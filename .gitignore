@@ -8,3 +8,5 @@ build/
 
 # Environment variables
 .env
+
+/src/generated/prisma

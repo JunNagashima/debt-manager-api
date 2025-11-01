@@ -15,4 +15,5 @@ COPY . .
 EXPOSE 3000
 
 # 開発サーバーを起動（ホットリロード）
-CMD ["npm", "run", "dev"]
+# ボリュームマウント後にもPrisma generateを実行
+CMD ["sh", "-c", "npx prisma generate && npm run dev"]

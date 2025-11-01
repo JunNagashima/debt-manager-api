@@ -12,7 +12,7 @@ RUN npm install
 COPY . .
 
 # ポートを公開
-EXPOSE 3000
+EXPOSE 3010
 
 # 開発サーバーを起動（ホットリロード）
 # ボリュームマウント後にもPrisma generateを実行

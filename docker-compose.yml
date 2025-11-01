@@ -7,22 +7,19 @@ services:
       context: .
       dockerfile: docker/Dockerfile.dev
     container_name: debt-manager-api-dev
+    env_file:
+      - .env.development # 環境変数ファイルを指定
     ports:
-      - "3000:3000"
+      - "3010:3010"
     volumes:
       # ソースコードをマウント（ホットリロード用）
       - .:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/debt-manager_dev
-      - PORT=3000
     depends_on:
       db:
         condition: service_healthy
     networks:
       - debt-manager-network
-
   # PostgreSQL
   db:
     image: postgres:15-alpine

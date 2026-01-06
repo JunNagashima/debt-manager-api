@@ -20,3 +20,260 @@ model Sample {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+//
+// ENUMS (CHECK 制約相当)
+//
+
+enum AdvanceType {
+  NORMAL
+  ADJUSTMENT
+}
+
+enum RepaymentSource {
+  MANUAL
+  OFFSET
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
+}
+
+//
+// accounts
+//
+
+model Account {
+  /// アカウント内部ID
+  id         String @id @default(uuid()) @db.Uuid
+  /// ユーザーID（表示用）
+  userId     String @unique @db.VarChar(50)
+  /// ユーザー名
+  name       String @db.VarChar(100)
+  /// SaaSユーザーID
+  saasUserId String @unique @db.VarChar(255)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // FriendRequest
+  sentRequests     FriendRequest[] @relation("RequesterRelation")
+  receivedRequests FriendRequest[] @relation("TargetRelation")
+
+  // Friend
+  friendsAsLow  Friend[] @relation("FriendUserLow")
+  friendsAsHigh Friend[] @relation("FriendUserHigh")
+
+  // Advance
+  advancesPaid     Advance[] @relation("AdvancePayer")
+  advancesReceived Advance[] @relation("AdvanceReceiver")
+
+  // Repayment
+  repaymentsPaid     Repayment[] @relation("RepaymentPayer")
+  repaymentsReceived Repayment[] @relation("RepaymentReceiver")
+
+  // AdvanceRequest
+  advanceRequestsCreated    AdvanceRequest[] @relation("AdvanceRequestRequester")
+  advanceRequestsAsPayer    AdvanceRequest[] @relation("AdvanceRequestPayer")
+  advanceRequestsAsReceiver AdvanceRequest[] @relation("AdvanceRequestReceiver")
+
+  // OffsetRequest
+  offsetRequestsCreated        OffsetRequest[] @relation("OffsetRequestRequester")
+  offsetRequestsAsCounterparty OffsetRequest[] @relation("OffsetRequestCounterparty")
+
+  // RepaymentCancelRequest
+  repaymentCancelRequestsCreated RepaymentCancelRequest[] @relation("RepaymentCancelRequester")
+
+  // UserPairBalance
+  balancesAsLow  UserPairBalance[] @relation("BalanceUserLow")
+  balancesAsHigh UserPairBalance[] @relation("BalanceUserHigh")
+
+  @@map("accounts")
+}
+
+//
+// friend_requests
+//
+
+model FriendRequest {
+  id              String   @id @default(uuid()) @db.Uuid
+  requesterUserId String   @db.VarChar(50)
+  targetUserId    String   @db.VarChar(50)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  requester Account @relation("RequesterRelation", fields: [requesterUserId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  target Account @relation("TargetRelation", fields: [targetUserId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  @@map("friend_requests")
+}
+
+//
+// friends
+//
+
+model Friend {
+  /// フレンドユーザーID（小）
+  userLow  String @db.VarChar(50)
+  /// フレンドユーザーID（大）
+  userHigh String @db.VarChar(50)
+
+  createdAt DateTime @default(now())
+
+  userLowAccount Account @relation("FriendUserLow", fields: [userLow], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  userHighAccount Account @relation("FriendUserHigh", fields: [userHigh], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  @@id([userLow, userHigh])
+  @@map("friends")
+}
+
+//
+// advances
+//
+
+model Advance {
+  id           String       @id @default(uuid()) @db.Uuid
+  payerId      String       @db.VarChar(50)
+  receiverId   String       @db.VarChar(50)
+  amount       Int
+  occurredDate DateTime     @db.Date
+  type         AdvanceType
+  note         String?
+  createdBy    String       @db.VarChar(50)
+  updatedBy    String       @db.VarChar(50)
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  payer Account @relation("AdvancePayer", fields: [payerId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  receiver Account @relation("AdvanceReceiver", fields: [receiverId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  @@map("advances")
+}
+
+//
+// repayments
+//
+
+model Repayment {
+  id           String           @id @default(uuid()) @db.Uuid
+  payerId      String           @db.VarChar(50)
+  receiverId   String           @db.VarChar(50)
+  amount       Int
+  occurredDate DateTime         @db.Date
+  note         String?
+  source       RepaymentSource
+  createdBy    String           @db.VarChar(50)
+  updatedBy    String           @db.VarChar(50)
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  payer Account @relation("RepaymentPayer", fields: [payerId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  receiver Account @relation("RepaymentReceiver", fields: [receiverId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  cancelRequests RepaymentCancelRequest[]
+
+  @@map("repayments")
+}
+
+//
+// advance_requests
+//
+
+model AdvanceRequest {
+  id           String        @id @default(uuid()) @db.Uuid
+  requesterId  String        @db.VarChar(50)
+  payerId      String        @db.VarChar(50)
+  receiverId   String        @db.VarChar(50)
+  amount       Int
+  occurredDate DateTime      @db.Date
+  note         String?
+  status       RequestStatus @default(PENDING)
+  resolvedAt   DateTime?
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  requester Account @relation("AdvanceRequestRequester", fields: [requesterId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  payer Account @relation("AdvanceRequestPayer", fields: [payerId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  receiver Account @relation("AdvanceRequestReceiver", fields: [receiverId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  @@map("advance_requests")
+}
+
+//
+// offset_requests
+//
+
+model OffsetRequest {
+  id                 String        @id @default(uuid()) @db.Uuid
+  requesterId        String        @db.VarChar(50)
+  counterpartyUserId String        @db.VarChar(50)
+  status             RequestStatus @default(PENDING)
+  resolvedAt         DateTime?
+
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  requester Account @relation("OffsetRequestRequester", fields: [requesterId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  counterparty Account @relation("OffsetRequestCounterparty", fields: [counterpartyUserId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  @@map("offset_requests")
+}
+
+//
+// repayment_cancel_requests
+//
+
+model RepaymentCancelRequest {
+  id          String        @id @default(uuid()) @db.Uuid
+  repaymentId String        @db.Uuid
+  requesterId String        @db.VarChar(50)
+  reason      String?
+  status      RequestStatus @default(PENDING)
+  resolvedAt  DateTime?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  repayment Repayment @relation(fields: [repaymentId], references: [id], onUpdate: Cascade, onDelete: Restrict)
+
+  requester Account @relation("RepaymentCancelRequester", fields: [requesterId], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  @@map("repayment_cancel_requests")
+}
+
+//
+// user_pair_balances
+//
+
+model UserPairBalance {
+  /// ユーザーID（小）
+  userLow  String @db.VarChar(50)
+  /// ユーザーID（大）
+  userHigh String @db.VarChar(50)
+
+  netLowToHigh  BigInt @default(0)
+  netHighToLow BigInt @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  userLowAccount Account @relation("BalanceUserLow", fields: [userLow], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  userHighAccount Account @relation("BalanceUserHigh", fields: [userHigh], references: [userId], onUpdate: Cascade, onDelete: Restrict)
+
+  @@id([userLow, userHigh])
+  @@map("user_pair_balances")
+}

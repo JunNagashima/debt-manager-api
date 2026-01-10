@@ -16,6 +16,15 @@ app.get('/', async (req: Request, res: Response) => {
     res.json(sampleData);
 });
 
+app.post('/accounts/check-user-id', async (req: Request, res: Response) => {
+    const { userId } = req.body;
+    console.log({ userId })
+    const accountData = await prisma.account.findFirst({
+        where: { userId: userId }
+    });
+    res.json(accountData);
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

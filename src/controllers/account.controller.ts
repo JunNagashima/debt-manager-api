@@ -8,3 +8,11 @@ export const checkUserId = async (req: CustomRequest, res: Response) => {
   const accountData = await findAccountByUserId(userId);
   res.json(accountData);
 };
+
+export const findUserId = async (req: CustomRequest, res: Response) => {
+  if (!req.account?.userId) {
+    return res.status(401).json({ message: 'Unauthorized' })
+  }
+
+  res.json(req.account.userId);
+};

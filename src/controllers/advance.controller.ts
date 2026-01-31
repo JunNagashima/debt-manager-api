@@ -5,7 +5,7 @@ import { createAdvance } from '../repositories/advanceRequest.repository';
 
 export const createAdvanceRequest = async (req: CustomRequest, res: Response) => {
   const result = createAdvanceRequestSchema.safeParse(req.body);
-  console.log('Create Advance Request Body:', req.body);
+
   if (!result.success) {
     return res.status(400).json({ error: result.error });
   }

@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { checkUserId, findUserId } from '../controllers/account.controller';
 import { accountMiddleware } from '../middleware/account.middleware';
 import { authenticateUser } from '../middleware/auth.middleware';
+import { selectFriends } from '../controllers/friend.controller';
 
 const router = Router();
 
-router.post('/check-user-id', checkUserId);
-router.get('/user-id', authenticateUser, accountMiddleware, findUserId);
+router.get('/', authenticateUser, accountMiddleware, selectFriends);
 
 export default router;

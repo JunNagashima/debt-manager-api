@@ -14,7 +14,7 @@ services:
     volumes:
       # ソースコードをマウント（ホットリロード用）
       - .:/app
-      - /app/node_modules
+      # - /app/node_modules
     depends_on:
       db:
         condition: service_healthy
